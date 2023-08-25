@@ -77,24 +77,34 @@ public:
         size_ = std::exchange(other.size_, 0);
         capacity_ = std::exchange(other.capacity_, 0);
     }
-
     SimpleVector& operator=(const SimpleVector& other) {
-        SimpleVector<Type> massiv(other);
-        std::copy(other.begin(), other.end(), &massiv[0]);
-        items_.swap(massiv);
-        size_ = std::exchange(other.size_, 0);
-        capacity_ = std::exchange(other.capacity_, 0);
+        if (this != &other) {
+            if (other.IsEmpty()) {
+                Clear();
+                return *this;
+            }
+            SimpleVector<Type> massiv(other.size_);
+            std::copy(other.begin(), other.end(), massiv.begin());
+            massiv.capacity_ = other.capacity_;
+            swap(massiv);
+        }
         return *this;
     }
 
     SimpleVector& operator=(SimpleVector&& other) {
-        ArrayPtr <Type> massiv(other.size_);
-        std::move(other.begin(), other.end(), &massiv[0]);
-        items_.swap(massiv);
-        size_ = std::exchange(other.size_, 0);
-        capacity_ = std::exchange(other.capacity_, 0);
+        if (this != &other) {
+            if (other.IsEmpty()) {
+                Clear();
+                return *this;
+            }
+            SimpleVector<Type> massiv(other.size_);
+            std::copy(other.begin(), other.end(), massiv.begin());
+            massiv.capacity_ = other.capacity_;
+            swap(massiv);
+        }
         return *this;
     }
+
 
     void PushBack(const Type& item) {
         if (this->size_ < this->capacity_) {
@@ -157,7 +167,7 @@ public:
     }
 
     const Type& operator[](size_t index) const noexcept {
-        assert(index <= size_);
+        assert(index < size_);
         return items_[index];
     }
     Type& At(size_t index) {
