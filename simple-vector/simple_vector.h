@@ -49,34 +49,26 @@ public:
 
     }
 
-    SimpleVector(size_t size, const Type& value) {
+    SimpleVector(size_t size, const Type& value) : size_(size), capacity_(size) {
         ArrayPtr <Type> massiv(size);
-        size_ = size;
-        capacity_ = size;
         items_.swap(massiv);
-        auto testbeg = this->begin();
-        auto testend = this->end();
-        std::fill(testbeg, testend, value);
+        std::fill(begin(), end(), value);
     }
 
-    SimpleVector(std::initializer_list<Type> init) {
+    SimpleVector(std::initializer_list<Type> init) : size_(init.size()) , capacity_(init.size()) {
         ArrayPtr <Type> massiv(init.size());
         size_t i = 0;
         for (auto val : init) {
             massiv[i] = val;
             ++i;
         }
-        size_ = init.size();
-        capacity_ = init.size();
         items_.swap(massiv);
     }
 
-    SimpleVector(const SimpleVector& other) {
+    SimpleVector(const SimpleVector& other): size_ (other.GetSize()), capacity_(other.GetCapacity()) {
         ArrayPtr <Type> massiv(other.GetCapacity());
         std::copy(other.begin(), other.end(), &massiv[0]);
         items_.swap(massiv);
-        this->size_ = other.GetSize();
-        this->capacity_ = other.GetCapacity();
     }
 
     SimpleVector(SimpleVector&& other)
@@ -87,16 +79,16 @@ public:
     }
 
     SimpleVector& operator=(const SimpleVector& other) {
-        SimpleVector<Type> massiv(other.GetCapacity());
+        SimpleVector<Type> massiv(other);
         std::copy(other.begin(), other.end(), &massiv[0]);
         items_.swap(massiv);
-        this->size_ = other.GetSize();
-        this->capacity_ = other.GetCapacity();
+        size_ = std::exchange(other.size_, 0);
+        capacity_ = std::exchange(other.capacity_, 0);
         return *this;
     }
 
     SimpleVector& operator=(SimpleVector&& other) {
-        ArrayPtr <Type> massiv(other.GetCapacity());
+        ArrayPtr <Type> massiv(other.size_);
         std::move(other.begin(), other.end(), &massiv[0]);
         items_.swap(massiv);
         size_ = std::exchange(other.size_, 0);
@@ -143,7 +135,7 @@ public:
     }
 
     void PopBack() noexcept {
-        assert((this->IsEmpty())== true);
+        assert(this->IsEmpty());
             --size_;
     }
 
@@ -160,11 +152,12 @@ public:
     }
 
     Type& operator[](size_t index) noexcept {
-        assert(index < size_== true);
+        assert(index < size_);
         return items_[index];
     }
 
     const Type& operator[](size_t index) const noexcept {
+        assert(index <= size_);
         return items_[index];
     }
     Type& At(size_t index) {
